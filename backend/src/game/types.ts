@@ -18,3 +18,4 @@ export interface GameState {
 }
 
 export type Move = 'LEFT' | 'RIGHT' | 'DOWN' | 'ROTATE' | 'HARD_DROP';
+export type GameAction = 'START' | 'PAUSE' | 'RESUME' | 'GAME_OVER';

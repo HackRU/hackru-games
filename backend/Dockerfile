@@ -2,10 +2,13 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
+# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
 
-RUN npm install
+# Install dependencies
+RUN npm ci
 
+# Copy the rest of the application code
 COPY . .
 
 FROM base AS test

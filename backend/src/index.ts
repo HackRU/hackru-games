@@ -2,8 +2,10 @@ import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
 import dotenv from 'dotenv';
-import * as redisService from './services/redisService';
-import { log, error } from './utils/logger';
+import * as redisService from '@/services/redisService';
+import { log, error } from '@/utils/logger';
+import { handleClientMessage, cleanupGame } from '@/game/gameHandler';
+import { authenticateClient } from '@/auth/authHandler';
 
 dotenv.config();
 
@@ -31,6 +33,31 @@ app.get('/health', async (req, res) => {
       status: 'Error',
       message: 'Health check failed',
     });
+  }
+});
+
+// WebSocket connection handler
+wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
+  try {
+    const clientId = await authenticateClient(req);
+    if (!clientId) {
+      ws.close(1008, 'Authentication failed');
+      return;
+    }
+
+    log(`Client ${clientId} connected`);
+
+    ws.on('message', (message: string) => {
+      handleClientMessage(ws, clientId, message);
+    });
+
+    ws.on('close', () => {
+      log(`Client ${clientId} disconnected`);
+      cleanupGame(clientId);
+    });
+  } catch (err) {
+    error('WebSocket connection error', err as Error);
+    ws.close(1011, 'Internal server error');
   }
 });
 
